@@ -14,13 +14,13 @@ exports.getAllOrders = async (req, res) => {
 exports.addOrder = async (req, res) => {
   try {
     const updatedItems = req.body.items.map((item) => ({
-      menuItem: mongoose.Types.ObjectId(item.menuItem),
+      menuItem: new mongoose.Types.ObjectId(item.menuItem),
       quantity: item.quantity,
       price: item.price,
     }));
 
     const order = new Order({
-      user: mongoose.Types.ObjectId(req.body.user),
+      user: new mongoose.Types.ObjectId(req.body.user),
       items: updatedItems,
       totalPrice: req.body.totalPrice,
     });
