@@ -11,8 +11,24 @@ exports.getAllOrders = async (req, res) => {
 
 exports.addOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const { user, items, ...rest } = req.body;
+
+    const formattedUser = mongoose.Types.ObjectId(user);
+
+    const formattedItems = items.map((item) => ({
+      menuItem: mongoose.Types.ObjectId(item.menuItem),
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    const order = new Order({
+      user: formattedUser,
+      items: formattedItems,
+      ...rest, 
+    });
+
     await order.save();
+
     res.status(201).json(order);
   } catch (error) {
     res.status(400).json({ message: error.message });
