@@ -1,4 +1,6 @@
 const Order = require('../models/orders');
+const mongoose = require('mongoose');
+
 
 exports.getAllOrders = async (req, res) => {
   try {
@@ -11,24 +13,19 @@ exports.getAllOrders = async (req, res) => {
 
 exports.addOrder = async (req, res) => {
   try {
-    const { user, items, ...rest } = req.body;
-
-    const formattedUser = mongoose.Types.ObjectId(user);
-
-    const formattedItems = items.map((item) => ({
+    const updatedItems = req.body.items.map((item) => ({
       menuItem: mongoose.Types.ObjectId(item.menuItem),
       quantity: item.quantity,
       price: item.price,
     }));
 
     const order = new Order({
-      user: formattedUser,
-      items: formattedItems,
-      ...rest, 
+      user: mongoose.Types.ObjectId(req.body.user),
+      items: updatedItems,
+      totalPrice: req.body.totalPrice,
     });
 
     await order.save();
-
     res.status(201).json(order);
   } catch (error) {
     res.status(400).json({ message: error.message });
