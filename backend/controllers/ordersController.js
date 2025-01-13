@@ -24,21 +24,21 @@ exports.addOrder = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.body.user)) {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
-    const userId = mongoose.Types.ObjectId(req.body.user);
+    const userId = new mongoose.Types.ObjectId(req.body.user);
 
     const updatedItems = req.body.items.map(item => {
       if (!mongoose.Types.ObjectId.isValid(item.menuItem)) {
         throw new Error(`Invalid menuItem ID: ${item.menuItem}`);
       }
       return {
-        menuItem: mongoose.Types.ObjectId(item.menuItem),
+        menuItem: new mongoose.Types.ObjectId(item.menuItem),
         quantity: item.quantity,
         price: item.price,
       };
     });
 
     const order = new Order({
-      user: userId,
+      user: new mongoose.Types.ObjectId(req.body.user),
       items: updatedItems,
       totalPrice: req.body.totalPrice,
     });
