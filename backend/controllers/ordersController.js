@@ -1,18 +1,28 @@
 const Order = require('../models/orders');
-const Menu = require('../models/menu');
+const User = require('../models/users');
+const Menu = require('../models/menu'); 
 const { AppError } = require('../middleware/errorHandler');
 const { findUserByName } = require('./usersController'); 
 
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate('user')
-      .populate('items.menuItem')
-      .lean();
-    
-    return res.status(200).json(orders || []);
+    const orders = await Order.find().lean();
+
+    for (const order of orders) {
+      order.user = await User.findById(order.user).lean();
+      for (const item of order.items) {
+        item.menuItem = await Menu.findById(item.menuItem).lean();
+      }
+    }
+
+    return res.status(200).json(orders);
   } catch (error) {
-    return res.status(500).json(new AppError(error.message, 500));
+    console.error("Error al obtener las órdenes:", error.message);
+    return res.status(500).json({
+      statusCode: 500,
+      status: "error",
+      message: error.message,
+    });
   }
 };
 
@@ -22,13 +32,13 @@ exports.addOrder = async (req, res) => {
 
     const foundUser = await findUserByName(user);
     if (!foundUser) {
-      return res.status(404).json({ message: 'User not found' });
+      throw new AppError('User not found', 404);
     }
 
     const formattedItems = [];
     for (const item of items) {
       const menuItem = await Menu.findOne({ name: item.menuItem });
-      
+
       if (!menuItem) {
         return res.status(404).json({ message: `Menu item "${item.menuItem}" not found` });
       }
