@@ -1,6 +1,7 @@
 const Order = require('../models/orders');
-const mongoose = require('mongoose');
+const Menu = require('../models/menu');
 const { AppError } = require('../middleware/errorHandler');
+const { findUserByName } = require('./usersController'); 
 
 exports.getAllOrders = async (req, res) => {
   try {
@@ -17,30 +18,32 @@ exports.getAllOrders = async (req, res) => {
 
 exports.addOrder = async (req, res) => {
   try {
-    if (!req.body.items || !Array.isArray(req.body.items)) {
-      return res.status(400).json({ message: 'Invalid order items' });
+    const { user, items, totalPrice } = req.body;
+
+    const foundUser = await findUserByName(user);
+    if (!foundUser) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(req.body.user)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
-    }
-    const userId = new mongoose.Types.ObjectId(req.body.user);
-
-    const updatedItems = req.body.items.map(item => {
-      if (!mongoose.Types.ObjectId.isValid(item.menuItem)) {
-        throw new Error(`Invalid menuItem ID: ${item.menuItem}`);
+    const formattedItems = [];
+    for (const item of items) {
+      const menuItem = await Menu.findOne({ name: item.menuItem });
+      
+      if (!menuItem) {
+        return res.status(404).json({ message: `Menu item "${item.menuItem}" not found` });
       }
-      return {
-        menuItem: new mongoose.Types.ObjectId(item.menuItem),
+
+      formattedItems.push({
+        menuItem: menuItem._id, 
         quantity: item.quantity,
         price: item.price,
-      };
-    });
+      });
+    }
 
     const order = new Order({
-      user: new mongoose.Types.ObjectId(req.body.user),
-      items: updatedItems,
-      totalPrice: req.body.totalPrice,
+      user: foundUser._id,
+      items: formattedItems,
+      totalPrice,
     });
 
     await order.save();

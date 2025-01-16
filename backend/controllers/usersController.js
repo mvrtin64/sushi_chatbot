@@ -11,10 +11,22 @@ exports.getAllUsers = async (req, res) => {
 
 exports.addUser = async (req, res) => {
   try {
-    const user = new User(req.body);
-    await user.save();
-    res.status(201).json(user);
+    const { name } = req.body;
+
+    const newUser = new User({ name });
+    await newUser.save();
+
+    res.status(201).json(newUser);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+exports.findUserByName = async (name) => {
+  try {
+    const user = await User.findOne({ name });
+    return user;
+  } catch (error) {
+    throw new Error(`Error finding user: ${error.message}`);
   }
 };
